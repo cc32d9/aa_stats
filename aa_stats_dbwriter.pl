@@ -29,6 +29,7 @@ my $db_password = 'Fao5Ohth';
 my $commit_every = 10;
 my $endblock = 2**32 - 1;
 
+my $aacontract = 'atomicassets';
 my $dropscontract = 'atomicdropsx';
 
 my $ok = GetOptions
@@ -39,6 +40,7 @@ my $ok = GetOptions
      'dsn=s'     => \$dsn,
      'dbuser=s'  => \$db_user,
      'dbpw=s'    => \$db_password,
+     'aacontract=s'    => \$aacontract,
      'dropscontract=s' => \$dropscontract,
     );
 
@@ -72,6 +74,22 @@ my $sth_add_claimdrop = $dbh->prepare
     ('INSERT IGNORE INTO CLAIMDROP ' .
      '(network, seq, block_num, block_time, trx_id, claimer, drop_id, claim_amount) ' .
      'VALUES(?,?,?,?,?,?,?,?)');
+
+my $sth_add_mint = $dbh->prepare
+    ('INSERT IGNORE INTO MINTS ' .
+     '(network, seq, block_num, block_time, trx_id, asset_id, collection_name, ' .
+     'schema_name, template_id, owner) ' .
+     'VALUES(?,?,?,?,?,?,?,?,?,?)');
+
+my $sth_add_xfer = $dbh->prepare
+    ('INSERT IGNORE INTO TRANSFERS ' .
+     '(network, seq, block_num, block_time, trx_id, asset_id, tx_from, tx_to, memo) ' .
+     'VALUES(?,?,?,?,?,?,?,?,?)');
+
+my $sth_add_burn = $dbh->prepare
+    ('INSERT IGNORE INTO BURNS ' .
+     '(network, seq, block_num, block_time, trx_id, asset_id, owner) ' .
+     'VALUES(?,?,?,?,?,?,?)');
 
 
 my $committed_block = 0;
@@ -240,7 +258,51 @@ sub process_atrace
         my $data = $act->{'data'};
         return unless ( ref($data) eq 'HASH' );
 
-        if( $contract eq $dropscontract and
+        if( $contract eq $aacontract )
+        {
+            if( $aname eq 'logmint' )
+            {
+                $sth_add_mint->execute($network, 
+                                       $receipt->{'global_sequence'},
+                                       $tx->{'block_num'},
+                                       $tx->{'block_time'},
+                                       $tx->{'trx_id'},
+                                       $data->{'asset_id'},
+                                       $data->{'collection_name'},
+                                       $data->{'schema_name'},
+                                       $data->{'template_id'},
+                                       $data->{'owner'});
+                printf STDERR ('!');
+            }
+            elsif( $aname eq 'transfer' )
+            {
+                foreach my $id (@{$data->{'asset_ids'}})
+                {
+                    $sth_add_xfer->execute($network, 
+                                           $receipt->{'global_sequence'},
+                                           $tx->{'block_num'},
+                                           $tx->{'block_time'},
+                                           $tx->{'trx_id'},
+                                           $id,
+                                           $data->{'tx_from'},
+                                           $data->{'tx_to'},
+                                           $data->{'memo'});
+                }
+                printf STDERR ('>');
+            }
+            elsif( $aname eq 'burnasset' )
+            {
+                $sth_add_burn->execute($network, 
+                                       $receipt->{'global_sequence'},
+                                       $tx->{'block_num'},
+                                       $tx->{'block_time'},
+                                       $tx->{'trx_id'},
+                                       $data->{'asset_id'},
+                                       $data->{'owner'});
+                printf STDERR ('-');
+            }
+        }
+        elsif( $contract eq $dropscontract and
             $aname eq 'claimdrop' )
         {
             $sth_add_claimdrop->execute($network, 
@@ -253,6 +315,7 @@ sub process_atrace
                                         $data->{'claim_amount'});
             printf STDERR ('.');
         }
+        
     }    
 }
 
