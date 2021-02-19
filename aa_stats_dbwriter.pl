@@ -271,7 +271,7 @@ sub process_atrace
                                        $data->{'collection_name'},
                                        $data->{'schema_name'},
                                        $data->{'template_id'},
-                                       $data->{'owner'});
+                                       $data->{'new_asset_owner'});
                 printf STDERR ('!');
             }
             elsif( $aname eq 'transfer' )
@@ -284,8 +284,8 @@ sub process_atrace
                                            $tx->{'block_time'},
                                            $tx->{'trx_id'},
                                            $id,
-                                           $data->{'tx_from'},
-                                           $data->{'tx_to'},
+                                           $data->{'from'},
+                                           $data->{'to'},
                                            $data->{'memo'});
                 }
                 printf STDERR ('>');
@@ -298,7 +298,7 @@ sub process_atrace
                                        $tx->{'block_time'},
                                        $tx->{'trx_id'},
                                        $data->{'asset_id'},
-                                       $data->{'owner'});
+                                       $data->{'asset_owner'});
                 printf STDERR ('-');
             }
         }
