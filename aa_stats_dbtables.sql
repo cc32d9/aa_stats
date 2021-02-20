@@ -29,6 +29,7 @@ CREATE UNIQUE INDEX CLAIMDROP_I01 ON CLAIMDROP (network, seq);
 CREATE INDEX CLAIMDROP_I02 ON CLAIMDROP (network, block_time);
 CREATE INDEX CLAIMDROP_I03 ON CLAIMDROP (network, drop_id, block_time);
 CREATE INDEX CLAIMDROP_I04 ON CLAIMDROP (network, claimer, block_time);
+CREATE INDEX CLAIMDROP_I05 ON CLAIMDROP (trx_id(16));
 
 
 
@@ -51,6 +52,7 @@ CREATE INDEX MINTS_I02 ON MINTS (network, block_time);
 CREATE INDEX MINTS_I03 ON MINTS (network, asset_id, block_time);
 CREATE INDEX MINTS_I04 ON MINTS (network, collection_name, block_time);
 CREATE INDEX MINTS_I05 ON MINTS (network, owner, block_time);
+CREATE INDEX MINTS_I06 ON MINTS (trx_id(16));
 
 
 CREATE TABLE TRANSFERS
@@ -71,6 +73,7 @@ CREATE INDEX TRANSFERS_I02 ON TRANSFERS (network, block_time);
 CREATE INDEX TRANSFERS_I03 ON TRANSFERS (network, asset_id, block_time);
 CREATE INDEX TRANSFERS_I04 ON TRANSFERS (network, tx_from, block_time);
 CREATE INDEX TRANSFERS_I05 ON TRANSFERS (network, tx_to, block_time);
+CREATE INDEX TRANSFERS_I06 ON TRANSFERS (trx_id(16));
 
 
 CREATE TABLE BURNS
@@ -88,6 +91,7 @@ CREATE UNIQUE INDEX BURNS_I01 ON BURNS (network, seq);
 CREATE INDEX BURNS_I02 ON BURNS (network, block_time);
 CREATE INDEX BURNS_I03 ON BURNS (network, asset_id, block_time);
 CREATE INDEX BURNS_I04 ON BURNS (network, owner, block_time);
+CREATE INDEX BURNS_I05 ON BURNS (trx_id(16));
 
 
 
