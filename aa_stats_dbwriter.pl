@@ -91,11 +91,6 @@ my $sth_add_burn = $dbh->prepare
      '(network, seq, block_num, block_time, trx_id, asset_id, owner) ' .
      'VALUES(?,?,?,?,?,?,?)');
 
-my $sth_add_setdata = $dbh->prepare
-    ('INSERT IGNORE INTO SETDATA ' .
-     '(network, seq, block_num, block_time, trx_id, asset_id, owner) ' .
-     'VALUES(?,?,?,?,?,?,?)');
-
 my $committed_block = 0;
 my $stored_block = 0;
 my $uncommitted_block = 0;
@@ -304,17 +299,6 @@ sub process_atrace
                                        $data->{'asset_id'},
                                        $data->{'asset_owner'});
                 printf STDERR ('-');
-            }
-            elsif( $aname eq 'logsetdata' )
-            {
-                $sth_add_setdata->execute($network, 
-                                          $receipt->{'global_sequence'},
-                                          $tx->{'block_num'},
-                                          $tx->{'block_time'},
-                                          $tx->{'trx_id'},
-                                          $data->{'asset_id'},
-                                          $data->{'asset_owner'});
-                printf STDERR ('~');
             }
         }
         elsif( $contract eq $dropscontract and

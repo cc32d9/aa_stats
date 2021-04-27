@@ -95,21 +95,3 @@ CREATE INDEX BURNS_I05 ON BURNS (trx_id(16));
 
 
 
-CREATE TABLE SETDATA
-(
- network       VARCHAR(15) NOT NULL,
- seq           BIGINT UNSIGNED NOT NULL,
- block_num     BIGINT NOT NULL,
- block_time    DATETIME NOT NULL,
- trx_id        VARCHAR(64) NOT NULL,
- asset_id      BIGINT UNSIGNED NOT NULL,
- owner         VARCHAR(13) NOT NULL
-)  ENGINE=InnoDB;
-
-CREATE UNIQUE INDEX SETDATA_I01 ON SETDATA (network, seq);
-CREATE INDEX SETDATA_I02 ON SETDATA (network, block_time);
-CREATE INDEX SETDATA_I03 ON SETDATA (network, asset_id, block_time);
-CREATE INDEX SETDATA_I04 ON SETDATA (network, owner, block_time);
-CREATE INDEX SETDATA_I05 ON SETDATA (trx_id(16));
-
-
