@@ -16,7 +16,7 @@ use Protocol::WebSocket::Frame;
 
 $Protocol::WebSocket::Frame::MAX_PAYLOAD_SIZE = 100*1024*1024;
 $Protocol::WebSocket::Frame::MAX_FRAGMENTS_AMOUNT = 102400;
-    
+
 $| = 1;
 
 my $network;
@@ -75,6 +75,12 @@ my $sth_add_claimdrop = $dbh->prepare
      '(network, seq, block_num, block_time, trx_id, claimer, drop_id, claim_amount) ' .
      'VALUES(?,?,?,?,?,?,?,?)');
 
+my $sth_add_claimdropkey = $dbh->prepare
+    ('INSERT IGNORE INTO CLAIMDROPKEY ' .
+     '(network, seq, block_num, block_time, trx_id, claimer, drop_id, claim_amount, referer, country) ' .
+     'VALUES(?,?,?,?,?,?,?,?,?,?)');
+
+
 my $sth_add_mint = $dbh->prepare
     ('INSERT IGNORE INTO MINTS ' .
      '(network, seq, block_num, block_time, trx_id, asset_id, collection_name, ' .
@@ -128,8 +134,8 @@ Net::WebSocket::Server->new(
                     print STDERR $@, "\n\n";
                     print STDERR $js, "\n";
                     exit;
-                } 
-                
+                }
+
                 my $ack = process_data($msgtype, $data);
                 if( $ack > 0 )
                 {
@@ -150,7 +156,7 @@ Net::WebSocket::Server->new(
                 $committed_block = 0;
                 $uncommitted_block = 0;
             },
-            
+
             );
     },
     )->start;
@@ -177,13 +183,13 @@ sub process_data
             {
                 my $block_time = $data->{'block_timestamp'};
                 $block_time =~ s/T/ /;
-                
+
                 my $tx = {
                     'block_num' => $data->{'block_num'},
                     'block_time' => $block_time,
                     'trx_id' => $trace->{'id'},
                 };
-                
+
                 foreach my $atrace (@{$trace->{'action_traces'}})
                 {
                     process_atrace($tx, $atrace);
@@ -221,18 +227,18 @@ sub process_data
                 my $epoch = timegm_nocheck($sec, $min, $hour, $mday, $mon-1, $year);
                 $gap = (time() - $epoch)/3600.0;
             }
-            
+
             my $period = time() - $counter_start;
             printf STDERR ("blocks/s: %8.2f, gap: %8.2fh, ",
                            $blocks_counter/$period, $gap);
             $counter_start = time();
             $blocks_counter = 0;
-            
+
             if( $uncommitted_block > $stored_block )
             {
                 $sth_upd_sync->execute($network, $uncommitted_block, $uncommitted_block);
                 $dbh->commit();
-                $stored_block = $uncommitted_block;                
+                $stored_block = $uncommitted_block;
             }
             return $committed_block;
         }
@@ -250,7 +256,7 @@ sub process_atrace
     my $act = $atrace->{'act'};
     my $contract = $act->{'account'};
     my $receipt = $atrace->{'receipt'};
-    
+
     if( $receipt->{'receiver'} eq $contract )
     {
         my $aname = $act->{'name'};
@@ -261,7 +267,7 @@ sub process_atrace
         {
             if( $aname eq 'logmint' )
             {
-                $sth_add_mint->execute($network, 
+                $sth_add_mint->execute($network,
                                        $receipt->{'global_sequence'},
                                        $tx->{'block_num'},
                                        $tx->{'block_time'},
@@ -277,7 +283,7 @@ sub process_atrace
             {
                 foreach my $id (@{$data->{'asset_ids'}})
                 {
-                    $sth_add_xfer->execute($network, 
+                    $sth_add_xfer->execute($network,
                                            $receipt->{'global_sequence'},
                                            $tx->{'block_num'},
                                            $tx->{'block_time'},
@@ -291,7 +297,7 @@ sub process_atrace
             }
             elsif( $aname eq 'logburnasset' )
             {
-                $sth_add_burn->execute($network, 
+                $sth_add_burn->execute($network,
                                        $receipt->{'global_sequence'},
                                        $tx->{'block_num'},
                                        $tx->{'block_time'},
@@ -301,27 +307,34 @@ sub process_atrace
                 printf STDERR ('-');
             }
         }
-        elsif( $contract eq $dropscontract and
-            $aname eq 'claimdrop' )
+        elsif( $contract eq $dropscontract )
         {
-            $sth_add_claimdrop->execute($network, 
-                                        $receipt->{'global_sequence'},
-                                        $tx->{'block_num'},
-                                        $tx->{'block_time'},
-                                        $tx->{'trx_id'},
-                                        $data->{'claimer'},
-                                        $data->{'drop_id'},
-                                        $data->{'claim_amount'});
-            printf STDERR ('.');
+            if( $aname eq 'claimdrop' )
+            {
+                $sth_add_claimdrop->execute($network,
+                                            $receipt->{'global_sequence'},
+                                            $tx->{'block_num'},
+                                            $tx->{'block_time'},
+                                            $tx->{'trx_id'},
+                                            $data->{'claimer'},
+                                            $data->{'drop_id'},
+                                            $data->{'claim_amount'});
+                printf STDERR ('.');
+            }
+            elsif( $aname eq 'claimdropkey' )
+            {
+                $sth_add_claimdropkey->execute($network,
+                                               $receipt->{'global_sequence'},
+                                               $tx->{'block_num'},
+                                               $tx->{'block_time'},
+                                               $tx->{'trx_id'},
+                                               $data->{'claimer'},
+                                               $data->{'drop_id'},
+                                               $data->{'claim_amount'},
+                                               $data->{'referer'},
+                                               $data->{'country'});
+                printf STDERR ('#');
+            }
         }
-        
-    }    
+    }
 }
-
-
-
-    
-        
-
-
-   
