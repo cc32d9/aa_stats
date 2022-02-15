@@ -1,10 +1,10 @@
-CREATE DATABASE aa_stats;
+CREATE DATABASE aa_owners;
 
-CREATE USER 'aa_stats'@'localhost' IDENTIFIED BY 'Fao5Ohth';
-GRANT ALL ON aa_stats.* TO 'aa_stats'@'localhost';
-grant SELECT on aa_stats.* to 'aa_stats_ro'@'%' identified by 'aa_stats_ro';
+CREATE USER 'aa_owners'@'localhost' IDENTIFIED BY 'Fao5Ohth';
+GRANT ALL ON aa_owners.* TO 'aa_owners'@'localhost';
+grant SELECT on aa_owners.* to 'aa_owners_ro'@'%' identified by 'aa_owners_ro';
 
-use aa_stats;
+use aa_owners;
 
 CREATE TABLE SYNC
 (
@@ -13,18 +13,17 @@ CREATE TABLE SYNC
 ) ENGINE=InnoDB;
 
 
-CREATE TABLE CLAIMDROP
+CREATE TABLE COLLECTIONS
 (
- network       VARCHAR(15) NOT NULL,
- seq           BIGINT UNSIGNED NOT NULL,
- block_num     BIGINT NOT NULL,
- block_time    DATETIME NOT NULL,
- trx_id        VARCHAR(64) NOT NULL,
- claimer       VARCHAR(13) NOT NULL,
- drop_id       BIGINT UNSIGNED NOT NULL,
- claim_amount  INT UNSIGNED NOT NULL,
- country       VARCHAR(20),
- whitelisted   TINYINT NOT NULL DEFAULT 0
+ network          VARCHAR(15) NOT NULL,
+ collection_name  VARCHAR(13) NOT NULL,
+ author           VARCHAR(13) NOT NULL,
+        bool             allow_notify;
+        vector <name>    authorized_accounts;
+        vector <name>    notify_accounts;
+        double           market_fee;
+        vector <uint8_t> serialized_data;
+ 
 )  ENGINE=InnoDB;
 
 CREATE UNIQUE INDEX CLAIMDROP_I01 ON CLAIMDROP (network, seq);

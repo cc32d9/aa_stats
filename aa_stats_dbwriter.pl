@@ -72,8 +72,8 @@ my $sth_upd_sync = $dbh->prepare
 
 my $sth_add_claimdrop = $dbh->prepare
     ('INSERT IGNORE INTO CLAIMDROP ' .
-     '(network, seq, block_num, block_time, trx_id, claimer, drop_id, claim_amount) ' .
-     'VALUES(?,?,?,?,?,?,?,?)');
+     '(network, seq, block_num, block_time, trx_id, claimer, drop_id, claim_amount, country, whitelisted) ' .
+     'VALUES(?,?,?,?,?,?,?,?,?,?)');
 
 my $sth_add_claimdropkey = $dbh->prepare
     ('INSERT IGNORE INTO CLAIMDROPKEY ' .
@@ -137,7 +137,7 @@ Net::WebSocket::Server->new(
                 }
 
                 my $ack = process_data($msgtype, $data);
-                if( $ack > 0 )
+                if( $ack >= 0 )
                 {
                     $conn->send_binary(sprintf("%d", $ack));
                     print STDERR "ack $ack\n";
@@ -244,7 +244,7 @@ sub process_data
         }
     }
 
-    return 0;
+    return -1;
 }
 
 
@@ -309,8 +309,9 @@ sub process_atrace
         }
         elsif( $contract eq $dropscontract )
         {
-            if( $aname eq 'claimdrop' )
+            if( $aname eq 'claimdrop' or $aname eq 'claimdropwl' )
             {
+                my $wl = ($aname eq 'claimdropwl') ? 1:0;
                 $sth_add_claimdrop->execute($network,
                                             $receipt->{'global_sequence'},
                                             $tx->{'block_num'},
@@ -318,8 +319,10 @@ sub process_atrace
                                             $tx->{'trx_id'},
                                             $data->{'claimer'},
                                             $data->{'drop_id'},
-                                            $data->{'claim_amount'});
-                printf STDERR ('.');
+                                            $data->{'claim_amount'},
+                                            $data->{'country'},
+                                            $wl);
+                printf STDERR ($wl ? '.' : '_');
             }
             elsif( $aname eq 'claimdropkey' )
             {
