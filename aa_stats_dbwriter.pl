@@ -66,9 +66,8 @@ my $dbh = DBI->connect($dsn, $db_user, $db_password,
 die($DBI::errstr) unless $dbh;
 
 my $sth_upd_sync = $dbh->prepare
-    ('INSERT INTO SYNC (network, block_num) VALUES(?,?) ' .
-     'ON DUPLICATE KEY UPDATE block_num=?');
-
+    ('INSERT INTO SYNC (network, block_num, block_time) VALUES(?,?,?) ' .
+     'ON DUPLICATE KEY UPDATE block_num=?, block_time=?');
 
 my $sth_add_claimdrop = $dbh->prepare
     ('INSERT IGNORE INTO CLAIMDROP ' .
@@ -197,20 +196,6 @@ sub process_data
             }
         }
     }
-    elsif( $msgtype == 1009 ) # CHRONICLE_MSGTYPE_RCVR_PAUSE
-    {
-        if( $uncommitted_block > $committed_block )
-        {
-            if( $uncommitted_block > $stored_block )
-            {
-                $sth_upd_sync->execute($network, $uncommitted_block, $uncommitted_block);
-                $dbh->commit();
-                $stored_block = $uncommitted_block;
-            }
-            $committed_block = $uncommitted_block;
-            return $committed_block;
-        }
-    }
     elsif( $msgtype == 1010 ) # CHRONICLE_MSGTYPE_BLOCK_COMPLETED
     {
         $blocks_counter++;
@@ -236,7 +221,9 @@ sub process_data
 
             if( $uncommitted_block > $stored_block )
             {
-                $sth_upd_sync->execute($network, $uncommitted_block, $uncommitted_block);
+                my $block_time = $data->{'block_timestamp'};
+                $block_time =~ s/T/ /;
+                $sth_upd_sync->execute($network, $uncommitted_block, $block_time, $uncommitted_block, $block_time);
                 $dbh->commit();
                 $stored_block = $uncommitted_block;
             }
